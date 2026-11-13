@@ -18,5 +18,8 @@ void main() {
     float light = 0.25 + 0.75 * diffuse;// 0.25 keeps faces turned away from going black
 
     vec4 color = texture(texSampler, fragTexCoord);
-    outColor = vec4(normal * 0.5 + 0.5, 1.0);
+    //outColor = vec4(normal * 0.5 + 0.5, 1.0);
+    //debug rainbow
+
+    outColor = vec4(color.rgb * light, color.a);
 }

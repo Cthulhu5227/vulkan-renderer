@@ -5,4 +5,4 @@ cmake --build --preset debug
 if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
 $env:VK_ADD_LAYER_PATH = "C:\msys64\ucrt64\bin"
-& "$PSScriptRoot\build\app.exe"z
+& "$PSScriptRoot\build\app.exe"
