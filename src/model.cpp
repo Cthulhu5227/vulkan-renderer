@@ -20,6 +20,7 @@ void App::loadModel(const std::string& path) {
     std::vector<glm::vec3> positions;
     std::vector<glm::vec2> texCoords;
     std::vector<glm::vec3> normals;
+    std::vector<size_t> vertexPosition;
     std::map<std::pair<int, int>, uint32_t> seen;   // (position, texCoord) -> vertex index
 
     // Turns one "v", "v/vt", "v//vn" or "v/vt/vn" corner into a vertex index.
@@ -34,7 +35,9 @@ void App::loadModel(const std::string& path) {
         auto [entry, isNew] = seen.try_emplace({v, vt}, static_cast<uint32_t>(vertices.size()));
         if (isNew) {
             Vertex vertex{};
-            vertex.pos = positions.at(objIndex(v, positions.size()));
+            size_t p = objIndex(v, positions.size());
+            vertex.pos = positions.at(p);
+            vertexPosition.push_back(p);
             if (vt != 0) {
                 glm::vec2 uv = texCoords.at(objIndex(vt, texCoords.size()));
                 vertex.texCoord = {uv.x, 1.0f - uv.y};   // OBJ's V goes up, Vulkan's goes down
@@ -69,14 +72,23 @@ void App::loadModel(const std::string& path) {
             for (size_t i = 1; i + 1 < face.size(); i++) {
                 indices.insert(indices.end(), {face[0], face[i], face[i + 1]});
             }
-            for (size_t i = 0; i < face.size(); i++) {
-                glm::vec3 p0 = vertices[face[i]].pos;
-                glm::vec3 p1 = vertices[face[(i + 1) % face.size()]].pos;
-                glm::vec3 p2 = vertices[face[(i + 2) % face.size()]].pos;
-                glm::vec3 n = glm::normalize(glm::cross(p1 - p0, p2 - p0));
-                vertices.at(face[i]).normal += n; // add normals (need sum into a per-position array instead)
-            }
+            
         }
+    }
+
+
+    //seamed verts share a position, so summing per position gives them the same normal.
+    normals.assign(positions.size(), glm::vec3(0.0f));
+    for (size_t i = 0; i < indices.size(); i += 3) {
+        uint32_t a = indices[i], b = indices[i + 1], c = indices[i + 2];
+        glm::vec3 n = glm::normalize(glm::cross(vertices[b].pos - vertices[a].pos,
+                                                vertices[c].pos - vertices[a].pos));
+        for (uint32_t corner : {a, b, c}) {
+            normals[vertexPosition[corner]] += n;
+        }
+    }
+    for (size_t i = 0; i < vertices.size(); i++) {
+        vertices[i].normal = glm::normalize(normals[vertexPosition[i]]);
     }
 
     if (indices.empty()) {

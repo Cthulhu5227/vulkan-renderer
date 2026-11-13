@@ -1,22 +1,26 @@
 #version 450
 
-// Matches UniformBufferObject in app.hpp.
+//needs to match UniformBufferObject in app.hpp.
 layout(binding = 0) uniform UniformBufferObject {
     mat4 model;
     mat4 view;
     mat4 proj;
 } ubo;
 
-// Matches Vertex in app.hpp.
+//needs to match Vertex in app.hpp.
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec2 inTexCoord;
+layout(location = 2) in vec3 inNormal;
 
 layout(location = 0) out vec2 fragTexCoord;
 layout(location = 1) out vec3 fragWorldPos;
+layout(location = 2) out vec3 fragNormal;
+
 
 void main() {
     vec4 worldPos = ubo.model * vec4(inPosition, 1.0);
     gl_Position = ubo.proj * ubo.view * worldPos;
     fragWorldPos = worldPos.xyz;
     fragTexCoord = inTexCoord;
+    fragNormal = mat3(ubo.model) * inNormal;
 }
